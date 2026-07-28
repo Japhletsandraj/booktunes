@@ -1,0 +1,52 @@
+# Booktunes API — Python 3.11
+#
+# NOTE on torch: install the CPU-only wheel to keep the image small enough for
+# Render's free tier (the default CUDA wheel is ~2.5GB and will fail the build):
+#   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+
+# --- Web framework ---
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9
+pydantic==2.7.4
+pydantic-settings==2.3.4
+email-validator==2.2.0        # required by pydantic's EmailStr
+
+# --- Database ---
+sqlalchemy[asyncio]==2.0.31
+asyncpg==0.29.0
+psycopg2-binary==2.9.9        # sync driver, used by Alembic
+pgvector==0.2.5               # 0.2.0 predates SQLAlchemy 2.0 support
+alembic==1.13.2
+greenlet==3.0.3
+
+# --- Cache / queue ---
+redis==5.0.7
+celery==5.4.0
+
+# --- ML ---
+# sentence-transformers 2.2.2 (as originally specced) is broken against
+# huggingface-hub>=0.13 — it imports the removed `cached_download`. 2.7.0 is the
+# oldest release that works with the current hub client.
+sentence-transformers==2.7.0
+torch==2.3.1
+scikit-learn==1.5.0
+numpy==1.26.4
+scipy==1.13.1
+
+# --- External APIs ---
+httpx==0.27.0
+spotipy==2.24.0
+ytmusicapi==1.7.5
+cloudinary==1.40.0
+tenacity==8.4.2
+
+# --- Auth ---
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1                 # passlib 1.7.4 is incompatible with bcrypt>=4.1
+
+# --- Ops ---
+python-dotenv==1.0.1
+prometheus-client==0.20.0
+sentry-sdk[fastapi]==2.7.1

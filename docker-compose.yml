@@ -1,0 +1,73 @@
+# Local development stack.
+#
+# Production does NOT use this — there, Postgres is Supabase and Redis is
+# Upstash. This exists so you can develop without signing up for anything,
+# against the same pgvector version.
+
+services:
+  db:
+    # Must be the pgvector image, not plain postgres — the vector type and the
+    # `<=>` cosine operator do not exist otherwise.
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: booktunes
+      POSTGRES_PASSWORD: booktunes
+      POSTGRES_DB: booktunes
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booktunes"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    ports: ["8000:8000"]
+    env_file: .env
+    environment:
+      # Override whatever .env points at — inside the network the hostnames
+      # are the service names, not localhost.
+      DATABASE_URL: postgresql://booktunes:booktunes@db:5432/booktunes
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    volumes:
+      # Live reload for local edits. The model cache is a named volume so a
+      # rebuild doesn't re-download it.
+      - ./app:/app/app
+      - modelcache:/app/.model_cache
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # Optional: only useful if you want to exercise the Celery path locally.
+  # Production on the free tier uses GitHub Actions instead (see README).
+  worker:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://booktunes:booktunes@db:5432/booktunes
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    volumes:
+      - modelcache:/app/.model_cache
+    command: ["celery", "-A", "app.core.celery_app", "worker", "--beat", "--loglevel=info", "--concurrency=1"]
+    profiles: ["workers"]
+
+volumes:
+  pgdata:
+  modelcache:

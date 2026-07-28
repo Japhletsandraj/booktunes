@@ -1,0 +1,123 @@
+name: Scheduled tasks
+
+# Render's free plan has no background workers, so GitHub Actions is the
+# scheduler. Free allowance is 2000 minutes/month on private repos and
+# unlimited on public ones — the jobs below use roughly 200-400 min/month.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   DATABASE_URL, REDIS_URL, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET,
+#   GOOGLE_BOOKS_API_KEY (optional), ALERT_WEBHOOK_URL (optional),
+#   RESEND_API_KEY (optional), SECRET_KEY
+#
+# NOTE: GitHub disables scheduled workflows in repos with no activity for
+# 60 days. If the crons go quiet, re-enable them in the Actions tab.
+
+on:
+  schedule:
+    # All times UTC. Staggered to match the Celery beat schedule.
+    - cron: "0 2 * * *"   # fetch_new_books
+    - cron: "0 3 * * *"   # retrain_models
+    - cron: "0 4 * * *"   # update_recommendations
+    - cron: "0 5 * * *"   # generate_playlists
+    - cron: "0 */6 * * *" # update_user_preferences
+    - cron: "0 23 * * *"  # cleanup_cache
+    - cron: "0 9 * * 1"   # weekly_usage_report
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Task to run
+        required: true
+        type: choice
+        options:
+          - retrain_models
+          - update_recommendations
+          - update_user_preferences
+          - fetch_new_books
+          - generate_playlists
+          - cleanup_cache
+          - aggregate_metrics
+          - weekly_usage_report
+          - rebuild_vector_index
+          - seed_catalogue
+      kwargs:
+        description: JSON kwargs
+        required: false
+        default: "{}"
+
+concurrency:
+  # A long ingest must not overlap the next cron tick — the free dyno and the
+  # upstream rate limits can't absorb two runs at once.
+  group: booktunes-scheduled
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt \
+            --extra-index-url https://download.pytorch.org/whl/cpu
+
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: .model_cache
+          key: minilm-l6-v2-v1
+
+      - name: Choose task
+        id: choose
+        run: |
+          case "${{ github.event.schedule }}" in
+            "0 2 * * *")   TASK=fetch_new_books ;;
+            "0 3 * * *")   TASK=retrain_models ;;
+            "0 4 * * *")   TASK=update_recommendations ;;
+            "0 5 * * *")   TASK=generate_playlists ;;
+            "0 */6 * * *") TASK=update_user_preferences ;;
+            "0 23 * * *")  TASK=cleanup_cache ;;
+            "0 9 * * 1")   TASK=weekly_usage_report ;;
+            *)             TASK="${{ inputs.task }}" ;;
+          esac
+          echo "task=$TASK" >> "$GITHUB_OUTPUT"
+          echo "Selected task: $TASK"
+
+      - name: Run task
+        env:
+          ENVIRONMENT: production
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          EMBEDDING_CACHE_DIR: .model_cache
+          MODEL_STORAGE_DIR: .models
+        run: |
+          python -m scripts.run_task "${{ steps.choose.outputs.task }}" \
+            --kwargs '${{ inputs.kwargs || ''{}'' }}'
+
+      # The trained ALS model lives on the runner's disk, which is destroyed
+      # when the job ends. Persisting it as an artifact lets the next run — and
+      # a manual download into the web service — reuse it.
+      - name: Upload trained model
+        if: steps.choose.outputs.task == 'retrain_models'
+        uses: actions/upload-artifact@v4
+        with:
+          name: als-model
+          path: .models/
+          retention-days: 7
+          if-no-files-found: ignore

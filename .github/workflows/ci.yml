@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        # pgvector-enabled image so the vector columns and cosine operators
+        # behave exactly as they do against Supabase.
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: booktunes_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ENVIRONMENT: test
+      SECRET_KEY: test-secret-key-not-used-in-production
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/booktunes_test
+      REDIS_URL: redis://localhost:6379/0
+      EMBEDDING_CACHE_DIR: .model_cache
+      MODEL_STORAGE_DIR: .models
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: .model_cache
+          key: minilm-l6-v2-v1
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt \
+            --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check app scripts tests
+
+      - name: Apply migrations
+        run: alembic upgrade head
+
+      - name: Run tests
+        run: pytest -q --cov=app --cov-report=term-missing
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

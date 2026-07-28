@@ -1,0 +1,99 @@
+# Render blueprint for Booktunes.
+#
+# IMPORTANT — what "free" actually covers on Render:
+#
+#   * Web Services      — free plan available (750 instance-hours/month, spins
+#                         down after 15 min idle, ~50s cold start).
+#   * Background Workers— NOT available on the free plan. `type: worker`
+#                         requires a paid instance type.
+#   * Cron Jobs         — also paid-only.
+#   * Postgres          — Render's free database is deleted after 30 days.
+#   * Key Value (Redis) — free tier exists but is capped and non-persistent.
+#
+# So this blueprint provisions ONLY the free web service, and points the
+# database at Supabase and the cache/broker at Upstash — both of which have
+# genuinely non-expiring free tiers.
+#
+# Scheduled work runs via GitHub Actions instead of a Render worker; see
+# .github/workflows/scheduled-tasks.yml. That keeps total cost at zero. The
+# paid worker/beat services are included below, commented out, for when you
+# outgrow that.
+
+services:
+  - type: web
+    name: booktunes-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /health/ready
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+
+      # Secrets — set these in the Render dashboard (sync:false keeps them
+      # out of the repo). Dashboard -> service -> Environment.
+      - key: DATABASE_URL          # Supabase -> Settings -> Database -> URI
+        sync: false
+      - key: REDIS_URL             # Upstash -> database -> Redis Connect
+        sync: false
+      - key: SPOTIFY_CLIENT_ID
+        sync: false
+      - key: SPOTIFY_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_BOOKS_API_KEY
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: ALERT_WEBHOOK_URL
+        sync: false
+      - key: ADMIN_TASK_TOKEN      # guards the /internal task-trigger routes
+        sync: false
+
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: CORS_ORIGINS
+        value: https://booktunes.vercel.app,http://localhost:3000
+      - key: ALLOWED_HOSTS
+        value: booktunes-api.onrender.com,localhost,127.0.0.1
+
+      - key: EMBEDDING_CACHE_DIR
+        value: /app/.model_cache
+      - key: MODEL_STORAGE_DIR
+        value: /app/.models
+
+# ---------------------------------------------------------------------------
+# PAID UPGRADE PATH — uncomment when you move off the free plan.
+#
+# Note the trained ALS model is written to the container filesystem, which is
+# ephemeral and NOT shared between services. Once the worker is a separate
+# service from the web app, the web app won't see models the worker trains.
+# Attach a Render Disk to both, or push the .npz to object storage.
+#
+#  - type: worker
+#    name: booktunes-worker
+#    runtime: docker
+#    dockerfilePath: ./Dockerfile
+#    plan: starter
+#    dockerCommand: celery -A app.core.celery_app worker --loglevel=info --concurrency=1
+#    envVars:
+#      - fromGroup: booktunes-secrets
+#
+#  - type: worker
+#    name: booktunes-beat
+#    runtime: docker
+#    dockerfilePath: ./Dockerfile
+#    plan: starter
+#    dockerCommand: celery -A app.core.celery_app beat --loglevel=info
+#    envVars:
+#      - fromGroup: booktunes-secrets
+# ---------------------------------------------------------------------------
