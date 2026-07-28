@@ -84,6 +84,12 @@ nosetests.xml
 logs/
 log/
 
+# The app writes into backend/logs/, so the directory has to exist in a fresh
+# clone. Re-include the directory itself, then keep only its .gitkeep.
+!backend/logs/
+backend/logs/*
+!backend/logs/.gitkeep
+
 # ----------------------------------------------------------------------------
 # SQLite
 # ----------------------------------------------------------------------------
@@ -124,6 +130,7 @@ frontend/node_modules/
 # ----------------------------------------------------------------------------
 backend/.env
 backend/.env.*
+!backend/.env.example
 
 # ----------------------------------------------------------------------------
 # VS Code
@@ -192,6 +199,16 @@ serviceAccountKey.json
 models/
 checkpoints/
 embeddings/
+
+# `models/` above also matches the SQLAlchemy package — without this, a new
+# file added under backend/app/models/ would be silently ignored.
+!backend/app/models/
+
+# Same as logs/: keep the empty backend/models/ directory (trained ALS weights
+# land here at runtime) without tracking the weights themselves.
+!backend/models/
+backend/models/*
+!backend/models/.gitkeep
 vectorstore/
 faiss_index/
 *.faiss

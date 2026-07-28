@@ -1,0 +1,23 @@
+# Backend-specific ignores. The repo-root .gitignore covers the general Python
+# and editor noise; this file covers artifacts only the backend produces.
+
+# Local secrets.
+.env
+.env.*
+!.env.example
+
+# Runtime artifacts written relative to this directory.
+logs/*
+!logs/.gitkeep
+data/*
+!data/.gitkeep
+
+# Trained ALS models and the cached sentence-transformer weights.
+models/*
+!models/.gitkeep
+.models/
+.model_cache/
+
+# Alembic autogenerate scratch output.
+*.orig
+*.rej

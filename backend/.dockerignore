@@ -1,0 +1,38 @@
+# Build context is backend/ — keep it small so Render's free-tier builds stay
+# fast and the cache invalidates only on real source changes.
+
+.git
+.gitignore
+.venv/
+venv/
+
+__pycache__/
+*.py[cod]
+*.so
+
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Secrets never belong in an image layer.
+.env
+.env.*
+!.env.example
+
+# Regenerated inside the image / at runtime.
+.model_cache/
+.models/
+models/
+logs/
+data/
+*.log
+
+# Not needed to run the API.
+tests/
+docs/
+docker-compose.yml
+Makefile
+README.md

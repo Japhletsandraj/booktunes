@@ -14,6 +14,11 @@
 # database at Supabase and the cache/broker at Upstash — both of which have
 # genuinely non-expiring free tiers.
 #
+# NOTE ON LOCATION: Render only auto-detects a blueprint named render.yaml in
+# the REPOSITORY ROOT. This copy lives in backend/ to keep the service's files
+# together; move or copy it to ../render.yaml (the paths below are already
+# repo-root-relative) before syncing the blueprint on Render.
+#
 # Scheduled work runs via GitHub Actions instead of a Render worker; see
 # .github/workflows/scheduled-tasks.yml. That keeps total cost at zero. The
 # paid worker/beat services are included below, commented out, for when you
@@ -23,7 +28,10 @@ services:
   - type: web
     name: booktunes-api
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    # Paths in a blueprint are resolved from the repo root, not from this
+    # file's directory — so both stay prefixed with backend/.
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: free
     region: oregon
     branch: main
@@ -82,7 +90,8 @@ services:
 #  - type: worker
 #    name: booktunes-worker
 #    runtime: docker
-#    dockerfilePath: ./Dockerfile
+#    dockerfilePath: ./backend/Dockerfile
+#    dockerContext: ./backend
 #    plan: starter
 #    dockerCommand: celery -A app.core.celery_app worker --loglevel=info --concurrency=1
 #    envVars:
@@ -91,7 +100,8 @@ services:
 #  - type: worker
 #    name: booktunes-beat
 #    runtime: docker
-#    dockerfilePath: ./Dockerfile
+#    dockerfilePath: ./backend/Dockerfile
+#    dockerContext: ./backend
 #    plan: starter
 #    dockerCommand: celery -A app.core.celery_app beat --loglevel=info
 #    envVars:
