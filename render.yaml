@@ -14,10 +14,9 @@
 # database at Supabase and the cache/broker at Upstash — both of which have
 # genuinely non-expiring free tiers.
 #
-# NOTE ON LOCATION: Render only auto-detects a blueprint named render.yaml in
-# the REPOSITORY ROOT. This copy lives in backend/ to keep the service's files
-# together; move or copy it to ../render.yaml (the paths below are already
-# repo-root-relative) before syncing the blueprint on Render.
+# NOTE ON LOCATION: this file must stay at the REPOSITORY ROOT — Render only
+# auto-detects a blueprint named render.yaml there, and a copy under backend/
+# is silently ignored. All paths below are repo-root-relative for that reason.
 #
 # Scheduled work runs via GitHub Actions instead of a Render worker; see
 # .github/workflows/scheduled-tasks.yml. That keeps total cost at zero. The
