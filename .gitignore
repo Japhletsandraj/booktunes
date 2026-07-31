@@ -37,12 +37,18 @@ eggs/
 pip-wheel-metadata/
 
 # Packaging
+#
+# These are anchored with a leading slash on purpose. A bare `lib/` matches at
+# ANY depth, so it also swallowed `frontend/src/lib/` — the whole API client,
+# auth context and types folder — and the Vercel build failed on a commit that
+# was missing them. Only the Python build artefacts at the repo root are meant
+# to be ignored here.
 develop-eggs/
-lib/
-lib64/
-parts/
-sdist/
-wheels/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/wheels/
 share/python-wheels/
 
 # Installer logs
