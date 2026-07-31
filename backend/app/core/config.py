@@ -2,10 +2,42 @@
 
 import json
 from functools import lru_cache
-from typing import Any
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    DotEnvSettingsSource,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
+
+# Settings that accept either a JSON list or a plain comma-separated string.
+CSV_LIST_FIELDS = frozenset({"CORS_ORIGINS", "ALLOWED_HOSTS"})
+
+
+class _CsvListSourceMixin:
+    """Stop pydantic-settings from JSON-decoding the CSV list settings.
+
+    Any field typed as a complex type (list/dict) gets `json.loads()` applied to
+    its raw env value *inside the settings source* — before field validators
+    ever run. So `CORS_ORIGINS=https://a.com,https://b.com` raises
+    JSONDecodeError and never reaches `Settings._split_csv`. Handing the raw
+    string through unchanged lets the validator do the parsing.
+    """
+
+    def prepare_field_value(self, field_name, field, value, value_is_complex):
+        if field_name in CSV_LIST_FIELDS:
+            return value
+        return super().prepare_field_value(field_name, field, value, value_is_complex)
+
+
+class _CsvEnvSource(_CsvListSourceMixin, EnvSettingsSource):
+    pass
+
+
+class _CsvDotEnvSource(_CsvListSourceMixin, DotEnvSettingsSource):
+    pass
 
 
 class Settings(BaseSettings):
@@ -59,6 +91,26 @@ class Settings(BaseSettings):
     MAX_CLOUDINARY_STORAGE_GB: int = 25
     QUOTA_ALERT_THRESHOLD: float = 0.8  # alert at 80% of any ceiling
 
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """Swap in the env sources that leave CSV list values alone.
+
+        Order is pydantic-settings' default precedence: init > env > .env > secrets.
+        """
+        return (
+            init_settings,
+            _CsvEnvSource(settings_cls),
+            _CsvDotEnvSource(settings_cls),
+            file_secret_settings,
+        )
+
     @field_validator("CORS_ORIGINS", "ALLOWED_HOSTS", mode="before")
     @classmethod
     def _split_csv(cls, v):
@@ -71,13 +123,6 @@ class Settings(BaseSettings):
                 return json.loads(text)
             return [item.strip() for item in text.split(",") if item.strip()]
         return v
-
-    @classmethod
-    def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
-        """Allow plain comma-separated values for list settings from .env files."""
-        if field_name in {"CORS_ORIGINS", "ALLOWED_HOSTS"}:
-            return cls._split_csv(raw_val)
-        return super().parse_env_var(field_name, raw_val)
 
     @property
     def is_production(self) -> bool:

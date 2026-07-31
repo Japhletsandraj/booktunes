@@ -44,6 +44,27 @@ class TestCsvSettings:
         s = Settings(ALLOWED_HOSTS=["example.com"])
         assert s.ALLOWED_HOSTS == ["example.com"]
 
+    def test_comma_separated_origins_from_env(self, monkeypatch):
+        """The deploy-breaking case: pydantic-settings JSON-decodes complex
+        fields inside the env source, before validators run. Only the init-kwarg
+        path was covered before, so this shipped and crashed on Render."""
+        monkeypatch.setenv("CORS_ORIGINS", "https://booktunes.vercel.app,http://localhost:3000")
+        s = Settings()
+        assert s.CORS_ORIGINS == ["https://booktunes.vercel.app", "http://localhost:3000"]
+
+    def test_comma_separated_hosts_from_env(self, monkeypatch):
+        monkeypatch.setenv("ALLOWED_HOSTS", "booktunes-api.onrender.com,localhost")
+        assert Settings().ALLOWED_HOSTS == ["booktunes-api.onrender.com", "localhost"]
+
+    def test_json_list_from_env_still_works(self, monkeypatch):
+        monkeypatch.setenv("CORS_ORIGINS", '["https://a.com", "https://b.com"]')
+        assert Settings().CORS_ORIGINS == ["https://a.com", "https://b.com"]
+
+    def test_non_csv_field_still_decoded_normally(self, monkeypatch):
+        """The source override must be scoped to the CSV fields only."""
+        monkeypatch.setenv("DB_POOL_SIZE", "12")
+        assert Settings().DB_POOL_SIZE == 12
+
 
 class TestEnvironmentFlag:
     def test_production_detected(self):
