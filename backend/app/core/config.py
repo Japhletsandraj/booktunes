@@ -82,7 +82,7 @@ class Settings(BaseSettings):
     ALERT_WEBHOOK_URL: str = ""
 
     # --- CORS / hosts ---
-    CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000","https://booktunes-murex.vercel.app/"])
     ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*"])
 
     # --- ML ---
