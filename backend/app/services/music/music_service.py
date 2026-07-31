@@ -1,17 +1,38 @@
-"""Playlist generation from Spotify (primary) and YouTube Music (fallback).
+"""Playlist generation: Deezer curates, YouTube Music plays.
 
-IMPORTANT — Spotify API deprecation (2024-11-27): apps created after that date
-receive 403 from `/recommendations`, `/audio-features`, and the related-artists
-endpoints. Search still works for everyone. So the primary path here is
-*mood-and-genre-driven search*, with the recommendations endpoint attempted
-opportunistically and its failure treated as normal. If your Spotify app
-predates the cutoff you get the richer audio-feature targeting for free.
+Neither of the two primary sources needs an API key, so playlists work on a
+fresh checkout with no credentials configured at all.
 
-Both clients are synchronous libraries, so every call is dispatched through
-``asyncio.to_thread`` to keep the event loop free.
+Sources, in the order they are tried:
+
+1. **Deezer** — mood/genre tags resolved against its public playlist search
+   give the track *names*. This is the discovery layer and the one that decides
+   whether a playlist actually fits the book. It returns no playable media.
+2. **YouTube Music** — resolves each curated name to a playable track, and is
+   also the standalone fallback (keyword search) when Deezer is unreachable
+   or returns too little.
+3. **Spotify** — retained but disabled unless credentials are set. Two things
+   broke it as a primary: apps created after 2024-11-27 get 403 from
+   `/recommendations`, `/audio-features` and related-artists, and search now
+   requires the app owner to hold an active Premium subscription. If you have
+   a pre-cutoff app and Premium, setting the credentials re-enables it.
+
+A playlist built via path 1+2 is stored with ``source="deezer"`` — that is what
+curated it — while its individual tracks carry ``source="youtube_music"``,
+which is what plays them.
+
+Note on latency: resolving curated names one-by-one costs one YouTube Music
+search each, and that limiter is deliberately conservative, so a cold 20-track
+playlist takes tens of seconds. This is why `tasks.generate_playlists` pre-builds
+them nightly and results are persisted; the request path is almost always a
+cache or DB hit.
+
+The Spotify and YouTube clients are synchronous libraries, so their calls are
+dispatched through ``asyncio.to_thread`` to keep the event loop free.
 """
 
 import asyncio
+import itertools
 import uuid
 from collections.abc import Sequence
 from typing import Any
@@ -24,6 +45,7 @@ from app.core.config import settings
 from app.core.logging_config import get_logger
 from app.core.redis_client import cache_get, cache_set
 from app.models import Book, BookPlaylist, User
+from app.services.music.deezer_client import DeezerClient
 from app.services.music.genre_mapping import (
     DEFAULT_DESCRIPTION,
     DEFAULT_NAME_TEMPLATE,
@@ -31,6 +53,7 @@ from app.services.music.genre_mapping import (
     PLAYLIST_NAME_TEMPLATES,
     audio_feature_targets,
     music_genres_for_book,
+    music_tags_for_book,
     search_terms_for_book,
 )
 from app.utils.rate_limiter import spotify_limiter, youtube_limiter
@@ -41,6 +64,13 @@ SEARCH_CACHE_TTL = 60 * 60 * 24 * 3
 PLAYLIST_CACHE_TTL = 60 * 60 * 24 * 7
 _SEARCH_PREFIX = "music:search:v1:"
 _PLAYLIST_PREFIX = "music:playlist:v1:"
+
+# How many name-resolutions run at once. The YouTube limiter is the real
+# throttle; this just stops a burst of coroutines all queueing on it.
+_RESOLVE_CONCURRENCY = 5
+# Resolve a few more than needed — a small share of curated names have no
+# YouTube Music match. Kept tight because each miss still costs a search.
+_RESOLVE_OVERFETCH = 6
 
 
 class MusicService:
@@ -58,8 +88,16 @@ class MusicService:
 
     @classmethod
     def initialize_clients(cls) -> dict[str, bool]:
-        """Build both clients. Safe to call repeatedly; caches the result."""
-        return {"spotify": cls._init_spotify(), "youtube_music": cls._init_youtube()}
+        """Build the clients. Safe to call repeatedly; caches the result.
+
+        Deezer needs no client object and no credentials — it's a keyless REST
+        API — so it reports reachability rather than a connection result.
+        """
+        return {
+            "deezer": DeezerClient.is_configured(),
+            "youtube_music": cls._init_youtube(),
+            "spotify": cls._init_spotify(),
+        }
 
     @classmethod
     def _init_spotify(cls) -> bool:
@@ -122,8 +160,9 @@ class MusicService:
     @classmethod
     def health(cls) -> dict[str, bool]:
         return {
-            "spotify": cls._spotify is not None,
+            "deezer": DeezerClient.is_configured(),
             "youtube_music": cls._youtube is not None,
+            "spotify": cls._spotify is not None,
         }
 
     # -- Spotify ----------------------------------------------------------
@@ -208,6 +247,91 @@ class MusicService:
 
         tracks = [self._parse_spotify_track(t) for t in payload.get("tracks") or []]
         return [t for t in tracks if t]
+
+    # -- Deezer (discovery) -----------------------------------------------
+
+    async def get_curated_tracks(
+        self, tags: Sequence[str], limit: int = 20
+    ) -> list[dict[str, Any]]:
+        """Pull tracks for the given curation tags and make them playable.
+
+        Deezer returns names only, so each survivor costs one YouTube Music
+        search. Returns playable track dicts in the usual shape.
+        """
+        if not DeezerClient.is_configured() or not tags:
+            return []
+
+        # Ask each tag for more than its even share so that a thin tag doesn't
+        # starve the playlist — the interleave below decides the final mix.
+        per_tag = max(10, (limit // max(1, len(tags))) * 3)
+        pools = await asyncio.gather(
+            *(DeezerClient.tag_top_tracks(tag, per_tag) for tag in tags)
+        )
+
+        pairs = self._interleave_pairs(pools, limit + _RESOLVE_OVERFETCH)
+        if not pairs:
+            logger.info("Deezer returned no tracks for tags %s", list(tags))
+            return []
+
+        semaphore = asyncio.Semaphore(_RESOLVE_CONCURRENCY)
+        resolved = await asyncio.gather(
+            *(self._resolve_pair(pair, semaphore) for pair in pairs)
+        )
+        tracks = [track for track in resolved if track]
+
+        logger.info(
+            "Deezer: %d names from tags %s, %d resolved on YouTube Music",
+            len(pairs), list(tags), len(tracks),
+        )
+        return tracks[:limit]
+
+    @staticmethod
+    def _interleave_pairs(
+        pools: Sequence[Sequence[dict[str, str]]], cap: int
+    ) -> list[dict[str, str]]:
+        """Round-robin the per-tag name lists, deduped case-insensitively.
+
+        Same reasoning as `_select_tracks`: taking the first N from one tag
+        gives a single-flavour playlist, which defeats blending moods.
+        """
+        out: list[dict[str, str]] = []
+        seen: set[tuple[str, str]] = set()
+
+        for row in itertools.zip_longest(*pools):
+            for pair in row:
+                if not pair:
+                    continue
+                key = (pair["artist"].lower(), pair["title"].lower())
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append(pair)
+                if len(out) >= cap:
+                    return out
+        return out
+
+    async def _resolve_pair(
+        self, pair: dict[str, str], semaphore: asyncio.Semaphore
+    ) -> dict[str, Any] | None:
+        """Find the YouTube Music track for one curated artist/title pair.
+
+        `get_youtube_tracks` supplies both the cache and the rate limiting, so
+        a name resolved for one book is free for every later book.
+        """
+        async with semaphore:
+            query = f"{pair['artist']} {pair['title']}"
+            results = await self.get_youtube_tracks(query, limit=1)
+
+        if not results:
+            return None
+
+        track = dict(results[0])
+        # Keep Deezer's spelling alongside YouTube's — the two disagree often
+        # enough (remasters, live versions) that it's worth being able to tell
+        # what was actually asked for.
+        track["curated_title"] = pair["title"]
+        track["curated_artist"] = pair["artist"]
+        return track
 
     # -- YouTube Music ----------------------------------------------------
 
@@ -311,25 +435,36 @@ class MusicService:
         metadata = await self.generate_playlist_metadata(book)
 
         pools: list[list[dict[str, Any]]] = []
-        source = "spotify"
+        source = "deezer"
 
-        if force_source in (None, "spotify"):
+        # 1. Deezer curation, resolved through YouTube Music.
+        if force_source in (None, "deezer"):
+            tags = music_tags_for_book(genres, moods)
+            if curated := await self.get_curated_tracks(tags, limit=track_count):
+                pools.append(curated)
+
+        # 2. Spotify, only if it was explicitly asked for or credentials exist.
+        if force_source == "spotify" or (force_source is None and not pools):
             targets = audio_feature_targets(moods)
             seeds = music_genres_for_book(genres, limit=5)
             if recommended := await self.get_spotify_recommendations(
                 seeds, targets, limit=track_count
             ):
                 pools.append(recommended)
+                source = "spotify"
 
             for query in queries[:4]:
                 if tracks := await self.search_spotify_tracks(query, limit=15):
                     pools.append(tracks)
+                    source = "spotify"
 
+        # 3. YouTube Music keyword search — the last resort, and the only path
+        #    that needs no credentials of any kind.
         available = sum(len(p) for p in pools)
-        # Half the target is the bar for "Spotify gave us something usable".
-        if available < track_count // 2 and force_source != "spotify":
+        if available < track_count // 2 and force_source not in ("deezer", "spotify"):
             logger.info(
-                "Spotify returned %d tracks for %r — falling back to YouTube Music",
+                "Curated sources returned %d tracks for %r — falling back to "
+                "YouTube Music keyword search",
                 available, book.title,
             )
             yt_pools = []
@@ -470,21 +605,30 @@ class MusicService:
         }
 
     async def get_previews(
-        self, track_ids: Sequence[str], source: str = "spotify"
+        self, track_ids: Sequence[str], source: str = "youtube_music"
     ) -> list[dict[str, Any]]:
         """Resolve 30-second preview URLs.
 
-        Spotify serves previews for a shrinking subset of tracks and only in
-        some markets, so `available: false` is a routine outcome, not a bug.
-        YouTube Music has no preview concept at all.
+        With Spotify off, no configured source serves preview clips: YouTube
+        Music has no such concept, and a Deezer-curated playlist plays through
+        YouTube Music. So `available: false` is now the normal answer, and
+        clients should link out via `external_url` instead of expecting audio.
+
+        Spotify previews still resolve if credentials are configured, though
+        even then the URL is null for most tracks and most markets.
         """
         if source != "spotify" or not self._init_spotify():
+            reason = (
+                f"Source '{source}' has no preview clips — play via external_url."
+                if source in ("youtube_music", "deezer")
+                else f"Previews are not available for source '{source}'."
+            )
             return [
                 {
                     "track_id": tid,
                     "preview_url": None,
                     "available": False,
-                    "reason": f"Previews are not available for source '{source}'.",
+                    "reason": reason,
                 }
                 for tid in track_ids
             ]

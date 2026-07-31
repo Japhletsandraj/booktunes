@@ -54,5 +54,14 @@ open_library_limiter = RateLimiter(rate=60, period=60.0, name="open_library")
 google_books_limiter = RateLimiter(rate=50, period=60.0, name="google_books")
 # Spotify's limit is a rolling ~180/min; stay well under to avoid 429 backoffs.
 spotify_limiter = RateLimiter(rate=120, period=60.0, name="spotify")
-# ytmusicapi scrapes an unofficial endpoint — be conservative.
-youtube_limiter = RateLimiter(rate=30, period=60.0, name="youtube_music")
+# Deezer allows ~50 requests per 5s per IP (there is no key, so the quota is
+# shared by everything on the host). Expressed in Deezer's own units on
+# purpose: the bucket starts full, so `rate` is also the burst size, and a
+# per-minute figure would let a nightly batch fire hundreds of requests at once
+# and earn "Quota limit exceeded" on the first second.
+deezer_limiter = RateLimiter(rate=40, period=5.0, name="deezer")
+# ytmusicapi scrapes an unofficial endpoint, so this stays conservative — but
+# it is now the critical path (every curated track needs one search to become
+# playable), so 30/min made a 20-track playlist take ~40s. 60/min with the
+# per-track resolution cache is the compromise.
+youtube_limiter = RateLimiter(rate=60, period=60.0, name="youtube_music")

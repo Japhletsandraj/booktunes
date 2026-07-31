@@ -20,7 +20,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import Float, desc, func, literal, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -187,11 +187,15 @@ class BookRecommendationEngine:
         vote doesn't outrank a 4.5-star book with a thousand.
         """
         prior_votes, prior_mean = 50, 3.5
+        # Typed Float on purpose: an untyped 175.0 literal inherits
+        # average_rating's NUMERIC(3, 2) type, whose ceiling is 9.99, and
+        # Postgres then fails the query with "numeric field overflow".
+        prior_mass = literal(prior_mean * prior_votes, Float)
         damped = (
             (
                 func.coalesce(Book.average_rating, prior_mean)
                 * func.coalesce(Book.rating_count, 0)
-                + prior_mean * prior_votes
+                + prior_mass
             )
             / (func.coalesce(Book.rating_count, 0) + prior_votes)
         )

@@ -244,7 +244,7 @@ class BookPlaylist(Base, TimestampMixin):
 
     __table_args__ = (
         CheckConstraint(
-            "source IN ('spotify', 'youtube_music', 'custom')",
+            "source IN ('deezer', 'spotify', 'youtube_music', 'custom')",
             name="ck_playlists_source",
         ),
         UniqueConstraint("book_id", "source", name="uq_playlist_book_source"),

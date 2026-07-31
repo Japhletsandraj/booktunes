@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # --- External APIs ---
+    # Discovery (mood/genre tags -> tracks) runs on Deezer's public API and
+    # YouTube Music, neither of which takes a key — so there is nothing to
+    # configure here for playlists to work.
+    #
+    # Spotify is optional and off unless credentials are set — apps created
+    # after 2024-11-27 lose /recommendations, and search now needs the app
+    # owner to hold Premium.
     SPOTIFY_CLIENT_ID: str = ""
     SPOTIFY_CLIENT_SECRET: str = ""
     GOOGLE_BOOKS_API_KEY: str = ""

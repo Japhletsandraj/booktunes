@@ -77,6 +77,60 @@ MOOD_SEARCH_TERMS: dict[str, list[str]] = {
     "bittersweet": ["bittersweet", "nostalgic", "poignant"],
 }
 
+# Book genre -> curation tags, used to search Deezer for playlists.
+#
+# These must be terms people actually name playlists after, not descriptive
+# prose — an invented tag like "brooding sinister score" matches nothing.
+# Where a mood word is a real genre name ("dark ambient", "melancholy") it is
+# used; otherwise the nearest well-populated genre name stands in.
+GENRE_TO_MUSIC_TAGS: dict[str, list[str]] = {
+    "fantasy": ["soundtrack", "epic", "celtic"],
+    "science_fiction": ["ambient", "electronic", "synthwave"],
+    "mystery": ["trip-hop", "jazz", "downtempo"],
+    "thriller": ["industrial", "drum and bass", "electronic"],
+    "horror": ["dark ambient", "industrial", "doom metal"],
+    "romance": ["soul", "rnb", "acoustic"],
+    "historical_fiction": ["classical", "folk", "world"],
+    "literary_fiction": ["indie", "singer-songwriter", "chillout"],
+    "young_adult": ["indie pop", "pop punk", "alternative"],
+    "children": ["acoustic", "folk", "happy"],
+    "biography": ["singer-songwriter", "folk", "soul"],
+    "memoir": ["soul", "singer-songwriter", "jazz"],
+    "history": ["classical", "world", "folk"],
+    "science": ["ambient", "minimal", "idm"],
+    "philosophy": ["ambient", "post-rock", "classical"],
+    "poetry": ["singer-songwriter", "ambient", "jazz"],
+    "self_help": ["chillout", "acoustic", "happy"],
+    "business": ["electronic", "chillout", "jazz"],
+    "travel": ["world", "reggae", "bossa nova"],
+    "true_crime": ["trip-hop", "industrial", "blues"],
+    "adventure": ["soundtrack", "rock", "folk"],
+    "classics": ["classical", "opera", "jazz"],
+    "graphic_novel": ["rock", "punk", "electronic"],
+    "short_stories": ["indie", "jazz", "chillout"],
+    "dystopian": ["industrial", "dark ambient", "electronic"],
+    "fiction": ["indie", "chillout", "acoustic"],
+    "nonfiction": ["chillout", "ambient", "jazz"],
+}
+
+# Mood -> curation tags. Mood carries more weight than genre in tag selection,
+# since it is the more discriminating signal.
+MOOD_TO_MUSIC_TAGS: dict[str, list[str]] = {
+    "dark": ["dark ambient", "darkwave"],
+    "uplifting": ["feel good", "uplifting"],
+    "melancholic": ["melancholy", "sad"],
+    "tense": ["industrial", "dark electro"],
+    "whimsical": ["twee", "quirky"],
+    "romantic": ["romantic", "love"],
+    "contemplative": ["ambient", "instrumental"],
+    "epic": ["epic", "post-rock"],
+    "cozy": ["mellow", "acoustic"],
+    "mysterious": ["trip-hop", "dark jazz"],
+    "humorous": ["fun", "happy"],
+    "bittersweet": ["bittersweet", "nostalgia"],
+}
+
+
 # Playlist title patterns, chosen by dominant genre.
 PLAYLIST_NAME_TEMPLATES: dict[str, str] = {
     "fantasy": "{title} — An Epic Soundtrack",
@@ -141,6 +195,28 @@ def audio_feature_targets(moods: dict[str, float]) -> dict[str, float]:
         for feature, value in accumulated.items()
         if total_weight.get(feature)
     }
+
+
+def music_tags_for_book(
+    genres: list[str], moods: dict[str, float], limit: int = 4
+) -> list[str]:
+    """Pick the curation tags to pull tracks from, mood first.
+
+    Mood leads because it's the more discriminating signal: two fantasy novels
+    with opposite moods should not get the same playlist, whereas the genre tag
+    alone would give both "soundtrack".
+    """
+    tags: list[str] = []
+    top_moods = sorted((moods or {}).items(), key=lambda kv: kv[1], reverse=True)[:2]
+    for mood, _ in top_moods:
+        tags.extend(MOOD_TO_MUSIC_TAGS.get(mood, []))
+
+    for genre in genres or []:
+        tags.extend(GENRE_TO_MUSIC_TAGS.get(genre, []))
+
+    deduped = list(dict.fromkeys(tags))[:limit]
+    # A book with no recognised genre or mood still needs something playable.
+    return deduped or ["chillout", "ambient"][:limit]
 
 
 def search_terms_for_book(genres: list[str], moods: dict[str, float]) -> list[str]:

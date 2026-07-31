@@ -9,7 +9,11 @@ from pydantic import BaseModel, Field
 from app.schemas.book import BookSummary
 from app.schemas.common import ORMModel
 
-PlaylistSource = Literal["spotify", "youtube_music", "custom"]
+# "deezer" means Deezer-curated and YouTube-resolved: the playlist was built
+# from Deezer's public playlist search, but each track plays from YouTube
+# Music. So a playlist carries source="deezer" while its tracks carry
+# "youtube_music".
+PlaylistSource = Literal["deezer", "spotify", "youtube_music", "custom"]
 
 
 class Track(BaseModel):
@@ -18,12 +22,12 @@ class Track(BaseModel):
     artist: str
     album: str | None = None
     duration_ms: int | None = None
-    # Spotify only serves 30s previews for a subset of tracks, and only in some
-    # markets — clients must handle this being null.
+    # Null for every YouTube Music track — it has no preview-clip concept — and
+    # for most Spotify tracks. Clients must handle this being null.
     preview_url: str | None = None
     external_url: str | None = None
     artwork_url: str | None = None
-    source: PlaylistSource = "spotify"
+    source: PlaylistSource = "youtube_music"
 
 
 class PlaylistOut(ORMModel):
@@ -51,7 +55,11 @@ class PlaylistWithBook(BaseModel):
 class GeneratePlaylistRequest(BaseModel):
     book_id: uuid.UUID
     source: PlaylistSource | None = Field(
-        None, description="Force a source; defaults to Spotify with YT Music fallback"
+        None,
+        description=(
+            "Force a source; defaults to Deezer curation resolved through "
+            "YouTube Music, falling back to YouTube Music keyword search"
+        ),
     )
     track_count: int = Field(20, ge=5, le=50)
     force_regenerate: bool = False
@@ -63,7 +71,7 @@ class SavePlaylistRequest(BaseModel):
 
 class PreviewRequest(BaseModel):
     track_ids: list[str] = Field(..., min_length=1, max_length=50)
-    source: PlaylistSource = "spotify"
+    source: PlaylistSource = "youtube_music"
 
 
 class PreviewOut(BaseModel):

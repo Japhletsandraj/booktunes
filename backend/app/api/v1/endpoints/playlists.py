@@ -178,8 +178,10 @@ async def preview_tracks(
 ):
     """Look up preview clips for tracks.
 
-    Spotify only publishes previews for a subset of tracks and only in some
-    markets, so expect `available: false` frequently — it's not an error.
+    Expect `available: false` for everything unless Spotify credentials are
+    configured — YouTube Music, which backs both the `youtube_music` and
+    `deezer` sources, has no preview-clip concept. Clients should open
+    `external_url` rather than treat this as an error.
     """
     results = await MusicService(db).get_previews(payload.track_ids, payload.source)
     return [PreviewOut(**r) for r in results]

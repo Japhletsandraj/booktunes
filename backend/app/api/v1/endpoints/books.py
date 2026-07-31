@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import Float, desc, func, or_, select
+from sqlalchemy import Float, desc, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_optional_user
@@ -137,10 +137,17 @@ async def trending_books(
 
     if len(books) < limit:
         prior_votes, prior_mean = 50, 3.5
+        # `prior_mean * prior_votes` is 175, but SQLAlchemy types an untyped
+        # numeric literal from its neighbours in the expression — here that is
+        # average_rating, a NUMERIC(3, 2) whose ceiling is 9.99. The literal
+        # would bind as NUMERIC(3, 2) and Postgres rejects it with "numeric
+        # field overflow", 503-ing the whole endpoint. Typing it Float pins it
+        # to double precision instead.
+        prior_mass = literal(prior_mean * prior_votes, Float)
         damped = (
             func.coalesce(Book.average_rating, prior_mean)
             * func.coalesce(Book.rating_count, 0)
-            + prior_mean * prior_votes
+            + prior_mass
         ) / (func.coalesce(Book.rating_count, 0) + prior_votes)
 
         existing_ids = {b.id for b in books}

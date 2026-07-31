@@ -1,0 +1,64 @@
+services:
+  - type: web
+    name: booktunes-api
+    runtime: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python -c "from app.core.database import init_db; init_db()"
+    startCommand: |
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: booktunes-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: booktunes-redis
+          type: redis
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: SPOTIFY_CLIENT_ID
+        sync: false
+      - key: SPOTIFY_CLIENT_SECRET
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://booktunes.vercel.app,http://localhost:3000
+    healthCheckPath: /health
+    autoDeploy: true
+
+  - type: worker
+    name: booktunes-worker
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.core.celery_app worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: booktunes-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: booktunes-redis
+          type: redis
+          property: connectionString
+      - key: SPOTIFY_CLIENT_ID
+        sync: false
+      - key: SPOTIFY_CLIENT_SECRET
+        sync: false
+
+  - type: redis
+    name: booktunes-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  - name: booktunes-db
+    plan: free
+    databaseName: booktunes
+    user: booktunes_user

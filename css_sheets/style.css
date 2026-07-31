@@ -1,0 +1,1702 @@
+/* Y2K Website Vibes CSS */
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(90deg, #bda7d8 0%, #ae51da 100%);
+    min-height: 100vh;
+    display: 80;
+    flex-direction: column;
+}
+
+
+
+h1, h2, h3 {
+    font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+    letter-spacing: 2px;
+    color: #250335;
+    text-shadow: 2px 2px 0 #fff, 4px 4px 8px #b6f0ff88;
+}
+
+/*nav {
+    background: linear-gradient(130deg,#b034f8 ,#d8b4ec 40%, #b034f8);
+
+    border-radius: 16px;
+    margin: 2rem auto;
+    padding: 1rem 2rem;
+    width: fit-content;
+    box-shadow: 0 2px 8px #ffb6f055;
+}*/
+
+nav a {
+    color: #ff00b6;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0 1rem;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+nav a:hover {
+    color: #00b6ff;
+    text-decoration: underline wavy #ffb6f0;
+}
+
+
+button, .btn {
+    background: linear-gradient(90deg, #6c3980 0%, #9c88cb 100%);
+    border: 2px solid #7d00b6;
+    border-radius: 12px;
+    color: #7d00b6;
+    font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+    font-size: 1.1rem;
+    padding: 0.5rem 1.5rem;
+    box-shadow: 0 2px 8px #b6f0ff88;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+button:hover, .btn:hover {
+    background: linear-gradient(90deg, #b6f0ff 0%, #ffb6f0 100%);
+    color: #ff00b6;
+}
+
+a {
+    color: #7d00b6;
+    text-decoration: underline dotted #ffb6f0;
+}
+
+a:hover {
+    color: #00b6ff;
+    text-decoration: underline wavy #b6f0ff;
+}
+
+.container {
+    background: #e3d6ebcc;
+    border: 2px dashed #b6f0ff;
+    border-radius: 24px;
+    margin: 2rem auto;
+    padding: 2rem;
+    min-width: 90%;
+    box-shadow: 0 4px 24px #ffb6f055;
+    min-height: 55vh; /* Consistent base height */
+    max-height: 80px; /* Reasonable maximum */
+    overflow-y: auto; /* Scroll only when needed */
+    display: flex;
+    flex-direction: column;
+}
+/* Ensure all pages use the same container behavior */
+/*.profile-page .container{
+    height: auto;
+},
+.discovery-page .container, */
+.library-page .container{
+    min-width: 150vh;
+}
+.home-page .container{
+    min-width: 150vh;
+}
+.profile-page .container,
+.container .container {
+    min-width: 150vh;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.container::-webkit-scrollbar {
+    width: 8px;
+    background: #f0f0f0;
+}
+
+.container::-webkit-scrollbar-thumb {
+    background: #b6f0ff;
+    border-radius: 4px;
+}
+.container::-webkit-scrollbar-thumb {
+    background: #b6f0ff;
+    border-radius: 10px;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+    background: #8ae3ff;
+}
+
+
+/* Navigation */
+.menu-bar {
+    width: 100%;
+    padding: 15rem 0;
+    background: #a78bfa;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.nav-buttons li a {
+    color: #fff;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.nav-buttons li a:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Content area */
+.content-box {
+    flex: 1;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Book rows */
+.row-scroll {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 150px;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+}
+
+.book-card {
+  scroll-snap-align: start;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Minecrafty Modal Styles */
+.minecraft-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(76,29,149,0.7);
+    overflow-y: auto; /* Add scroll view for modal */
+}
+.minecraft-modal-content {
+    background: #927fe5;
+    border: 4px solid #7c3aed;
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 700px;
+    width: 90vw;
+    max-height: 90vh; /* Limit height */
+    overflow-y: auto;  /* Enable vertical scroll if content overflows */
+    box-shadow: 0 8px 32px 0 rgba(109,40,217,0.18);
+    font-family: 'Press Start 2P', 'VT323', 'Consolas', monospace;
+    position: relative;
+    animation: popIn 0.2s;
+}
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.minecraft-close {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    font-size: 2rem;
+    color: #6d28d9;
+    cursor: pointer;
+    font-family: inherit;
+    user-select: none;
+}
+.minecraft-modal-flex {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+.minecraft-character {
+    min-width: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1rem;
+}
+.mc-head {
+    width: 48px; height: 48px;
+    background: #a78bfa;
+    border: 3px solid #6d28d9;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    box-shadow: 0 2px 0 #7c3aed;
+}
+.mc-body {
+    width: 36px; height: 48px;
+    background: #7c3aed;
+    border: 3px solid #6d28d9;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+.mc-arms {
+    width: 60px; height: 14px;
+    background: #a78bfa;
+    border: 3px solid #6d28d9;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    margin-left: -12px;
+}
+.mc-legs {
+    width: 36px; height: 32px;
+    background: #c4b5fd;
+    border: 3px solid #6d28d9;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+.minecraft-details {
+    flex: 1;
+    min-width: 0;
+}
+.minecraft-book-img {
+    width: 90px;
+    height: 120px;
+    border-radius: 6px;
+    border: 2px solid #a78bfa;
+    background: #fff;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px 0 rgba(124,58,237,0.10);
+}
+.minecraft-details h2 {
+    font-size: 1.2rem;
+    color: #6d28d9;
+    margin: 0 0 0.5rem 0;
+    font-family: inherit;
+}
+.minecraft-details h4 {
+    font-size: 0.9rem;
+    color: #a78bfa;
+    margin: 0 0 1rem 0;
+    font-family: inherit;
+}
+.minecraft-details p {
+    font-size: 0.85rem;
+    color: #4c1d95;
+    background: #f5f3ff;
+    border: 2px dashed #a78bfa;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-family: inherit;
+}
+.minecraft-link {
+    display: inline-block;
+    margin-top: 1rem;
+    background: #7c3aed;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+    border: 2px solid #a78bfa;
+    transition: background 0.2s, color 0.2s;
+}
+.minecraft-link:hover {
+    background: #a78bfa;
+    color: #6d28d9;
+}
+.minecraft-rating {
+    margin: 0.3rem 0 0.7rem 0;
+    font-size: 1.1rem;
+    color: #ffb6f0; /* pastel purple-pink for stars */
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 0 #7c3aed;
+}
+.minecraft-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-right: 2rem;
+    min-width: 140px;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+.minecraft-tab-btn {
+    background: linear-gradient(90deg, #b034f8 0%, #d8b4ec 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+    font-size: 1rem;
+    padding: 0.7rem 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #b6f0ff55;
+    transition: background 0.2s, color 0.2s;
+    outline: none;
+    width: 100%;
+    text-align: left;
+}
+.minecraft-tab-btn.active,
+.minecraft-tab-btn:hover {
+    background: linear-gradient(90deg, #7d00b6 0%, #b034f8 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px #b034f855;
+}
+.minecraft-tab-content {
+    margin-top: 1rem;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+    background: #f0e0ff;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #440974;
+    border-radius: 6px;
+    border: 2px solid #ecc7ff;
+}
+
+.row-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 1rem;
+    padding: 1rem 0;
+    scrollbar-width: thin;
+    background: #eeeaff;
+    border-radius: 8px;
+}
+.col-scroll {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 300px;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+.book-card {
+    min-width: 150px;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000000;
+    
+}
+
+.book-card:hover {
+    background: #e9e4f1; /* darker purple on hover */
+}
+
+.header-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #6d28d9; /* dark purple */
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+
+.menu-bar {
+    display: flex;
+    justify-content: center;
+    background: #f4f2f9; /* medium-light purple */
+    border-radius: 10%;
+    border-bottom: 1px solid #a7a2ba; /* lighter purple */
+    padding: 10px 10px; /* Changed to fit the buttons */
+    position: sticky;
+    top: 0;
+    z-index: 100;box-shadow: 0 2px 8px 0 rgba(109,40,217,0.08);
+}
+
+.nav-buttons {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-buttons li a {
+    text-decoration: none;
+    color: #4c1d95; /* dark purple */
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.nav-buttons li a:hover {
+    background: #c4b5fd; /* lighter purple */
+    color: #fff;
+}
+
+section h2 {
+    color: #7c3aed; /* purple */
+    margin-bottom: 1rem;
+}
+
+.genre-section h3 {
+    color: #6d28d9; /* dark purple */
+    margin-bottom: 0.5rem;
+}
+
+/* Minecrafty Modal Styles */
+.minecraft-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(76,29,149,0.7);
+    overflow-y: auto; /* Add scroll view for modal */
+}
+.minecraft-modal-content {
+    background: #ede9fe;
+    border: 4px solid #7c3aed;
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 700px;
+    width: 90vw;
+    max-height: 90vh; /* Limit height */
+    overflow-y: auto;  /* Enable vertical scroll if content overflows */
+    box-shadow: 0 8px 32px 0 rgba(109,40,217,0.18);
+    font-family: 'Press Start 2P', 'VT323', 'Consolas', monospace;
+    position: relative;
+    animation: popIn 0.2s;
+}
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.minecraft-close {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    font-size: 2rem;
+    color: #6d28d9;
+    cursor: pointer;
+    font-family: inherit;
+    user-select: none;
+}
+.minecraft-modal-flex {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+.minecraft-character {
+    min-width: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1rem;
+}
+.mc-head {
+    width: 48px; height: 48px;
+    background: #a78bfa;
+    border: 3px solid #6d28d9;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    box-shadow: 0 2px 0 #7c3aed;
+}
+.mc-body {
+    width: 36px; height: 48px;
+    background: #7c3aed;
+    border: 3px solid #6d28d9;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+.mc-arms {
+    width: 60px; height: 14px;
+    background: #a78bfa;
+    border: 3px solid #6d28d9;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    margin-left: -12px;
+}
+.mc-legs {
+    width: 36px; height: 32px;
+    background: #c4b5fd;
+    border: 3px solid #6d28d9;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+.minecraft-details {
+    flex: 1;
+    min-width: 0;
+}
+.minecraft-book-img {
+    width: 90px;
+    height: 120px;
+    border-radius: 6px;
+    border: 2px solid #a78bfa;
+    background: #fff;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px 0 rgba(124,58,237,0.10);
+}
+.minecraft-details h2 {
+    font-size: 1.2rem;
+    color: #6d28d9;
+    margin: 0 0 0.5rem 0;
+    font-family: inherit;
+}
+.minecraft-details h4 {
+    font-size: 0.9rem;
+    color: #a78bfa;
+    margin: 0 0 1rem 0;
+    font-family: inherit;
+}
+.minecraft-details p {
+    font-size: 0.85rem;
+    color: #4c1d95;
+    background: #f5f3ff;
+    border: 2px dashed #a78bfa;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-family: inherit;
+}
+.minecraft-link {
+    display: inline-block;
+    margin-top: 1rem;
+    background: #7c3aed;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+    border: 2px solid #a78bfa;
+    transition: background 0.2s, color 0.2s;
+}
+.minecraft-link:hover {
+    background: #a78bfa;
+    color: #6d28d9;
+}
+.minecraft-rating {
+    margin: 0.3rem 0 0.7rem 0;
+    font-size: 1.1rem;
+    color: #ffb6f0; /* pastel purple-pink for stars */
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 0 #7c3aed;
+}
+.minecraft-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-right: 2rem;
+    min-width: 140px;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+.minecraft-tab-btn {
+    background: linear-gradient(90deg, #b034f8 0%, #d8b4ec 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+    font-size: 1rem;
+    padding: 0.7rem 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #b6f0ff55;
+    transition: background 0.2s, color 0.2s;
+    outline: none;
+    width: 100%;
+    text-align: left;
+}
+.minecraft-tab-btn.active,
+.minecraft-tab-btn:hover {
+    background: linear-gradient(90deg, #7d00b6 0%, #b034f8 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px #b034f855;
+}
+.minecraft-tab-content {
+    margin-top: 1rem;
+}
+/* Additional React-specific styles */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(90deg, #bda7d8 0%, #ae51da 100%);
+}
+
+.loading-spinner {
+  font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+  font-size: 2rem;
+  color: #250335;
+  text-shadow: 2px 2px 0 #fff;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(90deg, #6c3980 0%, #9c88cb 100%);
+  border: 2px solid #7d00b6;
+  border-radius: 12px;
+  color: white;
+  font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #b6f0ff 0%, #ffb6f0 100%);
+  color: #ff00b6;
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-links {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.auth-link {
+  color: #7d00b6;
+  text-decoration: underline dotted #ffb6f0;
+}
+
+.auth-link:hover {
+  color: #00b6ff;
+  text-decoration: underline wavy #b6f0ff;
+}
+
+.error-message {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #fecaca;
+}
+
+.success-message {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #a7f3d0;
+}
+
+/* Preference Quiz Styles */
+.preference-quiz-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #d4bbe1cc;
+  border: 2px dashed #b6f0ff;
+  border-radius: 24px;
+  box-shadow: 0 4px 24px #ffb6f055;
+}
+
+.quiz-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.quiz-progress {
+  margin-bottom: 2rem;
+}
+
+.progress-bar {
+  height: 6px;
+  background: linear-gradient(90deg, #b034f8 0%, #d8b4ec 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.progress-step {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #a78bfa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+.progress-step.active {
+  background: #7c3aed;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #f5f3ff;
+  border: 2px solid #ddd6fe;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quiz-option:hover {
+  border-color: #a78bfa;
+  transform: translateY(-2px);
+}
+
+.quiz-option.selected {
+  background: #ede9fe;
+  border-color: #7c3aed;
+}
+
+.option-emoji {
+  font-size: 1.5rem;
+  margin-right: 1rem;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-label {
+  font-weight: bold;
+  color: #4c1d95;
+}
+
+.option-description {
+  font-size: 0.9rem;
+  color: #6d28d9;
+  margin-top: 0.25rem;
+}
+
+.quiz-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+}
+
+.quiz-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prev-btn {
+  background: #f1f5f9;
+  color: #3C1042;
+}
+
+.prev-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.next-btn {
+  background: linear-gradient(90deg, #b034f8 0%, #d8b4ec 100%);
+  color: white;
+}
+
+.next-btn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #7d00b6 0%, #b034f8 100%);
+}
+
+.quiz-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Book Grid and Cards */
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.book-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.book-cover {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.book-cover img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.add-to-library-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-info {
+  text-align: center;
+}
+
+.book-title {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #4c1d95;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+.book-authors {
+  font-size: 0.8rem;
+  color: #6d28d9;
+  margin-bottom: 0.25rem;
+}
+
+.book-year {
+  font-size: 0.7rem;
+  color: #a78bfa;
+}
+
+/* Search Styles */
+.search-form {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.search-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #a78bfa;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: #f5f3ff;
+}
+
+.search-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(90deg, #b034f8 0%, #d8b4ec 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-btn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #7d00b6 0%, #b034f8 100%);
+}
+
+/* Library Styles */
+.library-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: #f5f3ff;
+  padding: 1rem;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.stat-card:hover {
+  border-color: #a78bfa;
+  transform: translateY(-2px);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #7c3aed;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #6d28d9;
+}
+
+.library-filter {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn.active {
+  background: #a78bfa;
+  color: white;
+  border-color: #7c3aed;
+}
+
+.library-item {
+  position: relative;
+}
+
+.library-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.status-select {
+  padding: 0.25rem;
+  border: 1px solid #a78bfa;
+  border-radius: 4px;
+  background: #f5f3ff;
+}
+
+.user-rating {
+  font-size: 0.8rem;
+  color: #6d28d9;
+}
+
+.empty-state, .empty-library, .no-results {
+  text-align: center;
+  padding: 3rem;
+  color: #a78bfa;
+  font-size: 1.1rem;
+}
+
+.discovery-page .container {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #dbbee8;
+  color: rgb(176, 129, 188);
+  text-decoration: none;
+  border-radius: 6px;
+  min-height: 55vh;
+  min-width: 150vh;
+  width:100px;
+}
+
+.discover-link:hover {
+  background: #8b5cf6;
+}
+
+/* Profile Styles */
+
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid #a78bfa;
+  margin-bottom: 1rem;
+}
+
+.profile-username {
+  color: #6d28d9;
+  font-weight: bold;
+}
+
+.profile-email {
+  color: #666;
+}
+
+.profile-join-date {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.profile-bio {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f8f5ff;
+  border-radius: 8px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stat-item {
+  background: #f5f3ff;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.genres-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.genre-tag {
+  background: #ede9fe;
+  color: #7c3aed;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.activity-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f5ff;
+  border-radius: 8px;
+}
+
+.activity-cover {
+  width: 50px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.activity-details {
+  flex: 1;
+}
+
+.activity-book {
+  font-weight: bold;
+  color: #4c1d95;
+  margin-bottom: 0.25rem;
+}
+
+.activity-thought {
+  color: #666;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.activity-rating {
+  color: #fbbf24;
+}
+
+.activity-date {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #a78bfa;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #8b5cf6;
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #3C1042;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Edit Profile Styles */
+.edit-profile-container {
+  max-width: 500px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.edit-form {
+  margin-top: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #4c1d95;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ddd6fe;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #a78bfa;
+}
+
+.form-note {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .nav-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .nav-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .books-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  
+  .library-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .search-form {
+    flex-direction: column;
+  }
+  
+  .profile-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+}
+/* Layout Styles */
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.main-content {
+  flex: 1;
+  order: 3; /* Ensures it stays below navbar */
+  width: 100%;
+}
+.main-content.with-navbar {
+  margin-top: 80px; /* Adjust based on your navbar height */
+  flex: 1;
+}
+
+.main-content.full-page {
+  margin-top: 0;
+  flex: 1;
+}
+
+/* Preference Quiz Full Page Styles */
+.preference-quiz-page .menu-bar {
+  display: none !important;
+}
+
+.preference-quiz-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #bda7d8 0%, #ae51da 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Website Banner Styles */
+.website-banner {
+  background: linear-gradient(130deg, #b034f8, #d8b4ec 40%, #b034f8);
+  text-align: center;
+  padding: 1.5rem 0;
+  box-shadow: 0 4px 16px #4f388e55;
+  border-radius: 0 0 20px 20px;
+  width: 100%;
+  order: 1; /* Ensures it stays at top */
+  
+}
+
+
+.banner-title {
+  font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+  font-size: 2.5rem;
+  color: #250335;
+  text-shadow: 2px 2px 0 #fff, 4px 4px 8px #b6f0ff88;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.banner-subtitle {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 1.1rem;
+  color: #4c1d95;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+/* Book Card Layout Fix */
+.book-card {
+  min-width: 150px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-align: center;
+}
+
+.book-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  background: #f8f5ff;
+}
+
+.book-image {
+  width: 100px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #a78bfa;
+  margin-bottom: 0.8rem;
+  background: #f0e0ff;
+}
+
+.book-title {
+  font-weight: bold;
+  color: #4c1d95;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+  max-height: 2.4em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.book-author {
+  color: #6d28d9;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.book-actions {
+  margin-top: auto;
+}
+
+/* Home Page Styles */
+.home-page {
+  padding: 0 1rem;
+}
+.home-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 0;
+
+}
+.section {
+  margin-bottom: 3rem;
+}
+
+.section h2 {
+  color: #7c3aed;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  text-align: center;
+  text-shadow: 1px 1px 0 #fff;
+}
+
+.genre-section {
+  margin-bottom: 2rem;
+}
+
+.genre-section h3 {
+  color: #6d28d9;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  padding-left: 1rem;
+  border-left: 4px solid #a78bfa;
+}
+
+.empty-state, .empty-genre {
+  text-align: center;
+  color: #6d28d9;
+  font-style: italic;
+  padding: 2rem;
+  background: #f8f5ff;
+  border-radius: 12px;
+  border: 2px dashed #a78bfa;
+}
+
+/* Row Scroll Improvements */
+.row-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 1.5rem;
+  padding: 1rem 0.5rem;
+  scrollbar-width: thin;
+  background: #f8f5ff;
+  border-radius: 12px;
+  border: 2px solid #e9e4f1;
+}
+
+.row-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.row-scroll::-webkit-scrollbar-thumb {
+  background: #a78bfa;
+  border-radius: 4px;
+}
+
+.row-scroll::-webkit-scrollbar-track {
+  background: #e9e4f1;
+  border-radius: 4px;
+}
+
+/* Loading States */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #bda7d8 0%, #ae51da 100%);
+}
+
+.loading-spinner {
+  font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+  font-size: 2.5rem;
+  color: #250335;
+  text-shadow: 2px 2px 0 #fff;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #6d28d9;
+  font-size: 1.2rem;
+}
+/* Navbar Styles */
+.y2k-nav {
+  width: 100%;
+  background: rgba(233, 182, 255, 0.3);
+  border-radius: 12px;
+  margin: 1rem auto;
+  padding: 1rem;
+  order: 2; /* Ensures it stays below banner */
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+}
+
+.radio-nav-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex: 1;
+}
+
+.radio-nav-item {
+  display: flex;
+  align-items: center;
+}
+
+.radio-input {
+  display: none;
+}
+
+.radio-nav-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid #916fab;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+}
+
+.radio-nav-btn:hover {
+  background: rgba(233, 182, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(182, 240, 255, 0.4);
+}
+
+.radio-nav-btn.active {
+  background: #d3b6ff;
+  border-color: #d08aff;
+  box-shadow: 0 2px 8px rgba(182, 240, 255, 0.6);
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.welcome-msg {
+  font-weight: bold;
+  color: #333;
+}
+
+.logout-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 182, 240, 0.3);
+  border: 2px solid #ffb6f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 182, 240, 0.5);
+  transform: translateY(-1px);
+}
+/* Navbar Avatar Styles */
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-avatar-container {
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #b6f0ff;
+  box-shadow: 0 2px 8px #ffb6f055;
+  object-fit: cover;
+  transition: all 0.3s ease;
+}
+
+.user-avatar:hover {
+  border-color: #ffb6f0;
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px #b6f0ff88;
+}
+
+.welcome-msg {
+  color: #250335;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 #fff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.logout-btn {
+  background: linear-gradient(90deg, #6c3980 0%, #9c88cb 100%);
+  border: 2px solid #7d00b6;
+  border-radius: 12px;
+  color: #7d00b6;
+  font-family: 'Impact', 'Arial Black', cursive, sans-serif;
+  font-size: 0.9rem;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px #b6f0ff88;
+}
+
+.logout-btn:hover {
+  background: linear-gradient(90deg, #b6f0ff 0%, #ffb6f0 100%);
+  color: #ff00b6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px #b034f855;
+}
+
+/* Responsive Design for Navbar */
+@media (max-width: 768px) {
+  .nav-user {
+    gap: 0.5rem;
+  }
+  
+  .welcome-msg {
+    display: none; /* Hide welcome text on mobile */
+  }
+  
+  .user-avatar {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .logout-btn {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-user {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+  }
+}
+/* Add to your style.css for better placeholder styling */
+.book-card img[src*="placeholder-cover.jpg"] {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.minecraft-book-img[src*="placeholder-cover.jpg"] {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem;
+}

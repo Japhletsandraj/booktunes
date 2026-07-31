@@ -48,6 +48,9 @@ services:
         sync: false
       - key: REDIS_URL             # Upstash -> database -> Redis Connect
         sync: false
+      # Playlist curation (Deezer + YouTube Music) needs no credentials.
+      # Optional — leave unset unless you have a pre-2024-11-27 Spotify app
+      # AND Premium on the owning account. See backend/.env.example.
       - key: SPOTIFY_CLIENT_ID
         sync: false
       - key: SPOTIFY_CLIENT_SECRET
@@ -68,8 +71,11 @@ services:
       - key: SECRET_KEY
         generateValue: true
 
+      # Every origin the browser app is served from. Never "*": the API sets
+      # allow_credentials, and browsers reject wildcard + credentials.
+      # booktunes-web.onrender.com is the static site defined below.
       - key: CORS_ORIGINS
-        value: https://booktunes.vercel.app,http://localhost:3000
+        value: https://booktunes-web.onrender.com,https://booktunes.vercel.app,http://localhost:5173,http://localhost:3000
       - key: ALLOWED_HOSTS
         value: booktunes-api.onrender.com,localhost,127.0.0.1
 
@@ -77,6 +83,37 @@ services:
         value: /app/.model_cache
       - key: MODEL_STORAGE_DIR
         value: /app/.models
+
+  # --- Frontend -----------------------------------------------------------
+  # Static sites are genuinely free on Render (no instance hours, no spin-down)
+  # because they are served from the CDN, not a container.
+  - type: web
+    name: booktunes-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    branch: main
+    autoDeploy: true
+    envVars:
+      # In production the API is on a different host, so there is no dev proxy
+      # to lean on — the client calls the absolute URL and the request is a
+      # real cross-origin one, covered by CORS_ORIGINS above.
+      - key: VITE_API_BASE
+        value: https://booktunes-api.onrender.com/api/v1
+    routes:
+      # Client-side routing: /library and /profile are not files on disk, so
+      # every unmatched path has to fall through to index.html or a refresh
+      # anywhere but "/" returns 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        # Asset filenames are content-hashed by Vite, so they can be cached
+        # permanently; index.html is not and stays revalidated by default.
+        value: public, max-age=31536000, immutable
 
 # ---------------------------------------------------------------------------
 # PAID UPGRADE PATH — uncomment when you move off the free plan.
