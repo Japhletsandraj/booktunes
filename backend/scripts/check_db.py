@@ -12,10 +12,10 @@ Usage — against whatever `.env` points at:
 Against a deployed database, override the URL for one command:
 
     # PowerShell
-    $env:DATABASE_URL="Add_url_here"; python -m scripts.check_db
+    $env:DATABASE_URL="postgresql://postgres.omzsohqpfrwjdkeejark:booktunes123_@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"; python -m scripts.check_db
 
     # bash
-    DATABASE_URL="Add_url_here" python -m scripts.check_db
+    DATABASE_URL="postgresql://postgres.omzsohqpfrwjdkeejark:booktunes123_@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres" python -m scripts.check_db
 
 Take the URL from the Render dashboard (service -> Environment -> DATABASE_URL).
 Render's *internal* hostname only resolves inside Render, so from your own
