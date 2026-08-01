@@ -49,7 +49,20 @@ import type {
  * `??` alone is not enough either: it only catches null/undefined, and an env
  * var defined-but-empty is a real Vercel state that would yield BASE = ''.
  */
-const RAW_BASE = import.meta.env.VITE_API_BASE?.trim() || '/api/v1';
+/**
+ * The fallback has to differ by build. In dev, a relative path is what makes
+ * the Vite proxy work — same origin, no CORS. In a production build there is
+ * no proxy, so the same relative path resolves against the Vercel host and
+ * posts to a static site, which is the 405 seen on /api/v1/auth/login.
+ *
+ * Defaulting to the real API host means a working deploy needs no dashboard
+ * variable at all. VITE_API_BASE still overrides for anyone pointing a build
+ * at a different backend.
+ */
+const DEFAULT_BASE = import.meta.env.PROD
+  ? 'https://booktunes-api.onrender.com/api/v1'
+  : '/api/v1';
+const RAW_BASE = import.meta.env.VITE_API_BASE?.trim() || DEFAULT_BASE;
 const BASE = RAW_BASE.replace(/\/+$/, '').endsWith('/api/v1')
   ? RAW_BASE.replace(/\/+$/, '')
   : `${RAW_BASE.replace(/\/+$/, '')}/api/v1`;
