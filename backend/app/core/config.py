@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # --- Database ---
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/booktunes"
+    DATABASE_URL: str = "postgresql://booktunes_user:Omxm4YeeKMjlBdEs3SW3osCyeyLlG3Yl@dpg-d9l23m1t0dsc73flcc80-a/booktunes"
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 5
     DB_POOL_RECYCLE: int = 1800
