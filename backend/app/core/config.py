@@ -96,7 +96,13 @@ class Settings(BaseSettings):
     # enumerated in CORS_ORIGINS. Match them by pattern instead. Anchored at
     # both ends: Starlette uses re.fullmatch, but an unanchored pattern that
     # someone later switches to re.search would allow evil-vercel.app.attacker.com.
-    CORS_ORIGIN_REGEX: str = ""
+    #
+    # This default is deliberately non-empty. CORS_ORIGINS is overridden in the
+    # Render dashboard, and a dashboard value beats anything in render.yaml —
+    # so the deployed allow-list cannot be corrected from this repo at all.
+    # Nothing sets CORS_ORIGIN_REGEX there, which makes this default the one
+    # CORS knob that a plain `git push` can actually move.
+    CORS_ORIGIN_REGEX: str = r"^https://booktunes-[a-z0-9-]+\.vercel\.app$"
     ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*"])
 
     # --- ML ---

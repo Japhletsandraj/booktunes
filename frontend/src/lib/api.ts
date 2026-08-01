@@ -36,7 +36,23 @@ import type {
   User,
 } from './types';
 
-const BASE = import.meta.env.VITE_API_BASE ?? '/api/v1';
+/**
+ * Every route below is written relative to the API's mount point, so BASE has
+ * to end at `/api/v1` — `${BASE}/auth/login`, not `${BASE}/api/v1/auth/login`.
+ *
+ * VITE_API_BASE is set in the Vercel dashboard, where the natural thing to
+ * paste is the bare service host. That silently drops the mount point and
+ * every call 404s on /auth/... A dashboard value also beats any .env file in
+ * the repo, so this cannot be fixed by committing one — hence normalising here
+ * instead of trusting whoever typed it.
+ *
+ * `??` alone is not enough either: it only catches null/undefined, and an env
+ * var defined-but-empty is a real Vercel state that would yield BASE = ''.
+ */
+const RAW_BASE = import.meta.env.VITE_API_BASE?.trim() || '/api/v1';
+const BASE = RAW_BASE.replace(/\/+$/, '').endsWith('/api/v1')
+  ? RAW_BASE.replace(/\/+$/, '')
+  : `${RAW_BASE.replace(/\/+$/, '')}/api/v1`;
 
 const ACCESS_KEY = 'booktunes.access';
 const REFRESH_KEY = 'booktunes.refresh';
