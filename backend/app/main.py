@@ -135,6 +135,11 @@ app.add_middleware(
     # Never "*" with allow_credentials=True — browsers reject that combination,
     # and it would expose authenticated endpoints to any origin.
     allow_origins=settings.CORS_ORIGINS,
+    # Covers Vercel's per-deployment origins, which change on every push and so
+    # cannot be listed above. Empty string must become None — Starlette compiles
+    # whatever it is given, and "" fullmatches only the empty string but still
+    # costs a regex call on every request.
+    allow_origin_regex=settings.CORS_ORIGIN_REGEX or None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Request-ID"],

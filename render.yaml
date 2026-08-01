@@ -76,6 +76,11 @@ services:
       # booktunes-web.onrender.com is the static site defined below.
       - key: CORS_ORIGINS
         value: https://booktunes-web.onrender.com,https://booktunes-murex.vercel.app,https://booktunes.vercel.app,http://localhost:5173,http://localhost:3000
+      # Vercel gives every deployment its own origin
+      # (booktunes-<hash>-<team>.vercel.app), so preview builds can never be
+      # covered by the fixed list above. Matched by pattern instead.
+      - key: CORS_ORIGIN_REGEX
+        value: ^https://booktunes-[a-z0-9-]+\.vercel\.app$
       - key: ALLOWED_HOSTS
         value: booktunes-api.onrender.com,localhost,127.0.0.1
 

@@ -82,7 +82,21 @@ class Settings(BaseSettings):
     ALERT_WEBHOOK_URL: str = ""
 
     # --- CORS / hosts ---
-    CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000","https://booktunes-murex.vercel.app/"])
+    # No trailing slashes — browsers send Origin as scheme://host[:port] only,
+    # so "https://example.com/" never matches and silently blocks the origin.
+    CORS_ORIGINS: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "https://booktunes-murex.vercel.app",
+        ]
+    )
+    # Vercel mints a fresh origin for every deployment
+    # (booktunes-<hash>-<team>.vercel.app), so the preview URLs can never be
+    # enumerated in CORS_ORIGINS. Match them by pattern instead. Anchored at
+    # both ends: Starlette uses re.fullmatch, but an unanchored pattern that
+    # someone later switches to re.search would allow evil-vercel.app.attacker.com.
+    CORS_ORIGIN_REGEX: str = ""
     ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*"])
 
     # --- ML ---
