@@ -66,6 +66,11 @@ EXPOSE 8000
 HEALTHCHECK --interval=60s --timeout=10s --start-period=90s --retries=3 \
     CMD curl -fsS http://localhost:8000/health/ready || exit 1
 
-# One worker: the embedding model is ~400MB resident, and a second worker
-# would double that past the free tier's 512MB ceiling.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Migrations run here, in the entrypoint — see entrypoint.sh for why there is
+# nowhere else to put them on this plan. One worker: the embedding model is
+# ~400MB resident, and a second would double that past the 512MB ceiling.
+#
+# Invoked via `sh` rather than as ./entrypoint.sh: the repo is developed on
+# Windows, where git does not preserve the executable bit, so relying on the
+# file's own mode would break the image build depending on who last cloned it.
+CMD ["sh", "/app/entrypoint.sh"]
