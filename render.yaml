@@ -75,7 +75,7 @@ services:
       # allow_credentials, and browsers reject wildcard + credentials.
       # booktunes-web.onrender.com is the static site defined below.
       - key: CORS_ORIGINS
-        value: https://booktunes-web.onrender.com,https://booktunes.vercel.app,http://localhost:5173,http://localhost:3000
+        value: https://booktunes-web.onrender.com,https://booktunes-murex.vercel.app,https://booktunes.vercel.app,http://localhost:5173,http://localhost:3000
       - key: ALLOWED_HOSTS
         value: booktunes-api.onrender.com,localhost,127.0.0.1
 
