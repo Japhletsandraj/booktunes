@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy import Float, desc, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +16,13 @@ from app.models import Book, BookPlaylist, ReadingProgress, User, UserBookIntera
 from app.schemas.book import BookDetail, BookSummary
 from app.schemas.common import Page
 from app.services.ai import embeddings
+from app.services.catalogue_autofill import stock_genre
 from app.utils.taxonomy import CANONICAL_GENRES, MOOD_VOCABULARY
+
+# Mirrors SHELF_GENRES in the frontend's Home page, plus general fiction for
+# the trending row. Stocking exactly what the landing page renders keeps the
+# cold-start ingest small instead of pulling the whole seed plan.
+AUTOFILL_GENRES = ("fiction", "fantasy", "mystery", "science_fiction", "romance")
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -108,6 +114,7 @@ async def search_books(
 
 @router.get("/trending", response_model=list[BookSummary], summary="Trending books")
 async def trending_books(
+    background: BackgroundTasks,
     limit: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
@@ -161,6 +168,16 @@ async def trending_books(
         ).all()
         books.extend(extra)
 
+    if not books:
+        # Nothing to rank means nothing is stored at all — the damped fallback
+        # above already covers "no interactions yet". Stock the genres the home
+        # page renders so the next load has both a trending row and shelves.
+        for genre in AUTOFILL_GENRES:
+            background.add_task(stock_genre, genre)
+        # Deliberately not cached: caching an empty list here would outlive the
+        # ingest and keep the row blank for the full 30-minute TTL.
+        return []
+
     payload = [BookSummary.model_validate(b).model_dump(mode="json") for b in books]
     await cache_set(cache_key, payload, ttl=1800)
     return payload
@@ -181,6 +198,7 @@ async def list_moods():
 )
 async def books_by_genre(
     genre: str,
+    background: BackgroundTasks,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -196,6 +214,13 @@ async def books_by_genre(
             .offset(offset)
         )
     ).all()
+
+    # An unstocked shelf schedules its own fill. Only on the first page: paging
+    # past the end of a genre we already have is not evidence of an empty
+    # catalogue, and re-triggering there would fire on ordinary pagination.
+    if not rows and offset == 0 and genre in CANONICAL_GENRES:
+        background.add_task(stock_genre, genre)
+
     return Page(items=rows, total=int(total or 0), limit=limit, offset=offset)
 
 

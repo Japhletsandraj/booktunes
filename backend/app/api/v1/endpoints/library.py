@@ -3,19 +3,21 @@
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.core.errors import NotFoundError
+from app.core.logging_config import get_logger
 from app.core.redis_client import cache_delete, cache_delete_pattern
 from app.models import Book, ReadingProgress, User, UserBookInteraction
 from app.schemas.book import BookSummary
 from app.schemas.common import Message, Page
 from app.schemas.library import LibraryAdd, LibraryItem, LibraryUpdate
 
+logger = get_logger(__name__)
 router = APIRouter()
 
 
@@ -24,6 +26,38 @@ async def _invalidate(user_id: uuid.UUID) -> None:
     await cache_delete_pattern(f"recs:v1:{user_id}*")
     await cache_delete_pattern(f"stats:v1:{user_id}*")
     await cache_delete(f"userpref:v1:{user_id}")
+
+
+async def _relearn_preferences(user_id: uuid.UUID) -> None:
+    """Rebuild this user's taste vectors from their interaction history.
+
+    Clearing the recommendation cache alone is not enough to make a save
+    change what gets recommended: the cache is derived from the stored
+    preference vectors, and those are only rebuilt by the six-hourly
+    `update_user_preferences` cron. Until it ran, saving a book evicted the
+    cache and then recomputed the same recommendations from the same stale
+    vector — the shelf visibly did nothing.
+
+    Running it here closes that loop, so the books someone saves steer their
+    recommendations on the next request instead of hours later. The cron still
+    earns its keep for users whose signal decays without them touching a shelf.
+    """
+    from app.core.database import session_scope
+    from app.services.ai.preference_learner import UserPreferenceLearner
+
+    try:
+        async with session_scope() as session:
+            await UserPreferenceLearner(session).update_user_preferences(user_id)
+    except Exception:
+        # Background work: a failure here must not surface as a failed save,
+        # and the cron will pick the user up regardless.
+        logger.exception("Preference refresh failed for user %s", user_id)
+        return
+
+    # Evict again. The first eviction happened before the new vector existed,
+    # so a recommendation request racing this task would have re-cached the old
+    # ranking; without this that stale entry outlives the refresh.
+    await _invalidate(user_id)
 
 
 @router.get("", response_model=Page[LibraryItem], summary="Your library")
@@ -85,6 +119,7 @@ async def get_library(
 )
 async def add_to_library(
     payload: LibraryAdd,
+    background: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -124,6 +159,7 @@ async def add_to_library(
     await db.commit()
     await db.refresh(interaction)
     await _invalidate(user.id)
+    background.add_task(_relearn_preferences, user.id)
 
     return LibraryItem(
         book=BookSummary.model_validate(book),
@@ -144,6 +180,7 @@ async def add_to_library(
 async def update_library_entry(
     book_id: uuid.UUID,
     payload: LibraryUpdate,
+    background: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -172,6 +209,9 @@ async def update_library_entry(
     await db.commit()
     await db.refresh(interaction)
     await _invalidate(user.id)
+    # Ratings are the highest-weighted signal the learner has, so this path
+    # matters more for recommendation quality than the initial add does.
+    background.add_task(_relearn_preferences, user.id)
 
     book = await db.get(Book, book_id)
     pct = await db.scalar(
@@ -197,6 +237,7 @@ async def update_library_entry(
 )
 async def remove_from_library(
     book_id: uuid.UUID,
+    background: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -215,4 +256,7 @@ async def remove_from_library(
     # where you were, not reset you to page one.
     await db.commit()
     await _invalidate(user.id)
+    # Removing is signal too — the learner weights abandoned books negatively,
+    # so leaving the vector stale keeps recommending what was just rejected.
+    background.add_task(_relearn_preferences, user.id)
     return Message(message="Removed from your library. Your reading progress was kept.")

@@ -1,15 +1,24 @@
 /** Banner + nav + page slot. Order is banner(1) / nav(2) / content(3). */
 
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { health } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
 import { Avatar } from './Avatar';
 
-const NAV = [
+// Browsing is open to everyone; the rest needs a user. Signed-out visitors are
+// shown only the links that will actually work for them — offering "library"
+// to someone with no account just routes them into a redirect.
+type NavItem = { to: string; label: string; end?: boolean };
+
+const PUBLIC_NAV: NavItem[] = [
+  // `end` only on "/", or it stays highlighted on every nested route.
   { to: '/', label: 'home', end: true },
   { to: '/discover', label: 'discover' },
+];
+
+const PRIVATE_NAV: NavItem[] = [
   { to: '/library', label: 'library' },
   { to: '/playlists', label: 'playlists' },
   { to: '/profile', label: 'profile' },
@@ -57,8 +66,12 @@ export default function Layout() {
   const onLogout = async () => {
     await logout();
     toast.info('signed out', 'see you on the next track.');
-    navigate('/login', { replace: true });
+    // Home rather than /login — signing out should leave you browsing, not
+    // staring at a form asking you to come back.
+    navigate('/', { replace: true });
   };
+
+  const nav = user ? [...PUBLIC_NAV, ...PRIVATE_NAV] : PUBLIC_NAV;
 
   return (
     <div className="layout">
@@ -74,7 +87,7 @@ export default function Layout() {
       <nav className="y2k-nav" aria-label="Main">
         <div className="nav-container">
           <div className="radio-nav-group">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <div className="radio-nav-item" key={item.to}>
                 <NavLink
                   to={item.to}
@@ -91,7 +104,7 @@ export default function Layout() {
 
           <div className="nav-user">
             <HealthPill />
-            {user && (
+            {user ? (
               <>
                 <span className="welcome-msg">hi, {user.username}</span>
                 <div className="user-avatar-container">
@@ -105,6 +118,15 @@ export default function Layout() {
                 <button type="button" className="logout-btn" onClick={onLogout}>
                   log out
                 </button>
+              </>
+            ) : (
+              <>
+                <Link className="logout-btn" to="/login">
+                  sign in
+                </Link>
+                <Link className="logout-btn" to="/register">
+                  register
+                </Link>
               </>
             )}
           </div>

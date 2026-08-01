@@ -89,25 +89,56 @@ function Router() {
         }
       />
 
-      <Route
-        element={
-          <Protected>
-            <Layout />
-          </Protected>
-        }
-      >
+      {/*
+        Layout itself is public now — a first-time visitor lands on the home
+        page and sees the catalogue, rather than a sign-in wall for a product
+        they have not been shown yet. Auth moves down to the individual routes
+        that genuinely need a user, so browsing stays open and only personal
+        shelves are gated.
+      */}
+      <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/discover" element={<Discover />} />
-        <Route path="/library" element={<Library />} />
-        <Route path="/playlists" element={<Playlists />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/edit" element={<EditProfile />} />
+        <Route
+          path="/library"
+          element={
+            <Protected>
+              <Library />
+            </Protected>
+          }
+        />
+        <Route
+          path="/playlists"
+          element={
+            <Protected>
+              <Playlists />
+            </Protected>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <Protected>
+              <Profile />
+            </Protected>
+          }
+        />
+        <Route
+          path="/profile/edit"
+          element={
+            <Protected>
+              <EditProfile />
+            </Protected>
+          }
+        />
         <Route
           path="/profile/avatar"
           element={
-            <Suspense fallback={<Loader label="opening the avatar studio" />}>
-              <AvatarStudio />
-            </Suspense>
+            <Protected>
+              <Suspense fallback={<Loader label="opening the avatar studio" />}>
+                <AvatarStudio />
+              </Suspense>
+            </Protected>
           }
         />
       </Route>

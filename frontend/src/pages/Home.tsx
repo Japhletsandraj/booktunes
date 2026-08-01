@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ApiError,
   books as booksApi,
@@ -34,10 +34,20 @@ const SHELF_GENRES = ['fantasy', 'mystery', 'science_fiction', 'romance'];
 
 function useQuickAdd() {
   const toast = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { notifyLibraryChanged } = useBookModal();
 
   return useCallback(
     async (book: BookSummary) => {
+      // Adding writes to a shelf that only exists for an account. Sending a
+      // signed-out visitor to /login beats letting the request 401 and
+      // surfacing a failure they cannot act on.
+      if (!user) {
+        toast.info('sign in first', 'saving books needs an account.');
+        navigate('/login');
+        return;
+      }
       try {
         await libraryApi.add({ book_id: book.id, status: 'want_to_read' });
         toast.ok('added', `“${book.title}” is on your want-to-read shelf.`);
@@ -49,7 +59,7 @@ function useQuickAdd() {
         );
       }
     },
-    [toast, notifyLibraryChanged],
+    [toast, navigate, user, notifyLibraryChanged],
   );
 }
 
@@ -178,10 +188,18 @@ function ForYou() {
   );
 }
 
+// An empty catalogue makes the API stock itself in the background, so an empty
+// first response is a "not yet" rather than a "never". Re-ask a few times to
+// pick the books up once the ingest lands, then stop — a genre upstream has
+// nothing for would otherwise poll forever.
+const RESTOCK_POLLS = 5;
+const RESTOCK_INTERVAL_MS = 6000;
+
 function Trending() {
   const { openBook } = useBookModal();
   const quickAdd = useQuickAdd();
   const [items, setItems] = useState<BookSummary[] | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -192,17 +210,33 @@ function Trending() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
+
+  useEffect(() => {
+    if (items === null || items.length > 0 || attempt >= RESTOCK_POLLS) return;
+    const timer = setTimeout(() => setAttempt((n) => n + 1), RESTOCK_INTERVAL_MS);
+    return () => clearTimeout(timer);
+  }, [items, attempt]);
+
+  const stocking = items !== null && items.length === 0 && attempt < RESTOCK_POLLS;
 
   return (
     <section className="section">
       <h2>▲ trending this week</h2>
       {items === null ? (
         <CardSkeletons count={6} />
+      ) : stocking ? (
+        <>
+          <EmptyState>
+            Stocking the shelves from Open Library — this takes a few seconds on
+            a cold start. Books will appear here on their own.
+          </EmptyState>
+          <CardSkeletons count={6} />
+        </>
       ) : items.length === 0 ? (
         <EmptyState>
-          The catalogue is empty. Seed it with{' '}
-          <code>python -m scripts.seed_books</code>.
+          Nothing in the catalogue yet. Try again shortly, or run the full seed
+          with <code>python -m scripts.seed_books</code>.
         </EmptyState>
       ) : (
         <div className="row-scroll">
@@ -264,16 +298,30 @@ export default function Home() {
         <div className="page-head">
           <div>
             <h1 className="holo-text" style={{ fontSize: '2rem', margin: 0 }}>
-              hey {user?.full_name || user?.username} ✦
+              {user ? `hey ${user.full_name || user.username} ✦` : 'welcome to booktunes ✦'}
             </h1>
             <p className="muted">
               every book here comes with a soundtrack. open one and hit “tunes”.
             </p>
           </div>
+          {!user && (
+            <Link className="btn" to="/register">
+              make an account
+            </Link>
+          )}
         </div>
 
-        <ContinueReading />
-        <ForYou />
+        {/*
+          Both of these call endpoints that require a bearer token, so they are
+          mounted only for a signed-in user — rendering them logged out would
+          fire two guaranteed 401s on every visit to the landing page.
+        */}
+        {user && (
+          <>
+            <ContinueReading />
+            <ForYou />
+          </>
+        )}
         <Trending />
 
         <section className="section">
