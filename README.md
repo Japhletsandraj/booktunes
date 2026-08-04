@@ -41,3 +41,4 @@ Workflows live in `.github/workflows/` at the repo root and run against
 - `ci.yml` — lint, migrations, tests and a Docker build on every push and PR.
 - `scheduled-tasks.yml` — cron-driven background jobs (Render's free plan has
   no workers, so GitHub Actions is the scheduler).
+colaborated with _________ and __________ for design project.
